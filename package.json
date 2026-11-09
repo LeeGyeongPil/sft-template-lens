@@ -1,0 +1,62 @@
+{
+  "name": "sft-template-lens",
+  "version": "0.1.0",
+  "description": "Render SFT training JSONL with the real chat template and tokenizer to see loss masks, truncation and format errors before you train.",
+  "license": "MIT",
+  "type": "module",
+  "private": false,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "sft-template-lens": "dist-cli/cli.mjs"
+  },
+  "files": [
+    "dist-cli/",
+    "dist/index.html",
+    "fixtures/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES/",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "sft",
+    "chat-template",
+    "tokenizer",
+    "fine-tuning",
+    "jsonl",
+    "loss-mask"
+  ],
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "build:cli": "vite build --config vite.cli.config.ts",
+    "cli": "npm run build:cli --silent && node dist-cli/cli.mjs",
+    "pretest": "npm run build:cli --silent",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check:static": "node scripts/check-static.mjs"
+  },
+  "dependencies": {
+    "@huggingface/jinja": "0.5.11",
+    "@huggingface/tokenizers": "0.2.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "happy-dom": "21.0.4",
+    "typescript": "7.0.2",
+    "vite": "8.3.7",
+    "vite-plugin-singlefile": "2.3.4",
+    "vitest": "5.1.0"
+  }
+}

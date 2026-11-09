@@ -1,0 +1,2 @@
+{"instruction":"파이썬에서 리스트를 뒤집는 방법을 알려 줘.","input":"","output":"reversed(lst) 로 뒤집힌 이터레이터를 얻거나 lst[::-1] 로 새 리스트를 만들 수 있습니다."}
+{"instruction":"Translate to Korean.","input":"Good morning","output":"좋은 아침입니다."}

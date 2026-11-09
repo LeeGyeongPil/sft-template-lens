@@ -1,0 +1,13 @@
+# Dependencies and build output (root-anchored so src/, test/, fixtures/ are never ignored)
+/node_modules/
+/dist/
+/dist-cli/
+/coverage/
+/.vite/
+/*.log
+/.env
+/.env.*
+!/.env.example
+.DS_Store
+/.vscode/
+/.idea/

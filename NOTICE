@@ -1,0 +1,12 @@
+sft-template-lens bundles small files from public model repositories so that the practice (mock) mode works offline.
+They keep their original licenses (all Apache-2.0). Sources, revisions and the download date are listed in fixtures/README.md.
+
+- HuggingFaceTB/SmolLM2-135M-Instruct: tokenizer.json, tokenizer_config.json (Apache-2.0)
+- HuggingFaceTB/SmolLM3-3B: chat_template.jinja (Apache-2.0)
+- Qwen/Qwen2.5-0.5B-Instruct and Qwen/Qwen3-0.6B: chat template text taken from tokenizer_config.json (Apache-2.0)
+
+The full Apache License 2.0 text is in LICENSES/Apache-2.0.txt.
+Modification notice (Apache-2.0 section 4(b)): fixtures/smollm2-135m/tokenizer.json is a modified copy of the original (7 vocabulary entries and the 7 merge rules that produce them were removed; see fixtures/README.md).
+fixtures/templates/system-unsupported.jinja is written for this project and is under the project license (MIT).
+
+The project's own code is under the MIT license (see LICENSE).
