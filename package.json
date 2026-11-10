@@ -1,6 +1,6 @@
 {
   "name": "sft-template-lens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render SFT training JSONL with the real chat template and tokenizer to see loss masks, truncation and format errors before you train.",
   "license": "MIT",
   "type": "module",

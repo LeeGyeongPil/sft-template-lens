@@ -67,7 +67,7 @@ node dist-cli/cli.mjs check examples/demo.jsonl --demo --max-seq-len 256; echo "
 ```
 
 ```text
-sft-template-lens 0.1.0  examples/demo.jsonl
+sft-template-lens 0.1.1  examples/demo.jsonl
 template: SmolLM2 (ChatML, no markers) + SmolLM2 tokenizer (practice mock)
 mode: practice (mock) - bundled SmolLM2 tokenizer, not the real model of this template
 mask: approx-content   max_seq_len: 256   date: 2026-01-01
@@ -93,7 +93,7 @@ exit=1
 (`...` 는 줄여 쓴 부분입니다. 실제로는 15개까지 나옵니다.)
 
 ![CLI 요약 리포트와 종료 코드 1](docs/images/05-cli-ci.png)
-*같은 검사의 터미널 화면. 오류가 있어서 종료 코드가 1 입니다.*
+*같은 검사의 터미널 화면. 오류가 있어서 종료 코드가 1 입니다. (이미지는 0.1.0 시점 화면이라 버전 표시가 0.1.0 입니다.)*
 
 참고: 이 화면(05·06)의 프롬프트는 `sft-template-lens check ...` 로 보입니다. 이 이름은 npm 으로 설치했을 때 쓰는 명령(bin)이고, 소스를 clone 해서 쓸 때는 같은 인자로 `node dist-cli/cli.mjs check ...` 를 실행합니다. 두 방식은 같은 코드를 실행하며 출력도 같습니다.
 
@@ -243,16 +243,10 @@ flowchart LR
 - **범위 밖**: 멀티모달(이미지 토큰), 도구 호출 메시지의 정밀 마스크, `prompt`/`completion` 형식, 웹 워커(수십만 줄), TRL 학습용 템플릿 자동 교체.
 - Node 22.12.0 은 CI 매트릭스에서 확인하는 대상입니다(작성 환경은 Node 26).
 
-## 다른 도구와 비교
+## 언제 쓰나
 
-| 대안 | 부족한 점 | 이 도구 |
-|---|---|---|
-| [HF chat-template-playground](https://huggingface.co/spaces/huggingfacejs/chat-template-playground) | 한 대화씩 렌더, 토큰화·마스크·잘림 없음 | 데이터셋 전체를 한 번에 렌더·토큰화·집계 |
-| [Axolotl `preprocess --debug`](https://docs.axolotl.ai/docs/cli.html) | Python·YAML 설정 필요, 몇 샘플만 로그 | 설치 없이 브라우저, 집계 표, 같은 엔진의 CLI |
-| [TRL `assistant_only_loss`](https://huggingface.co/docs/trl/chat_templates) | 학습 코드 안에서만 동작 | 학습 전에 프레임워크와 무관하게 확인 |
-| [Unsloth `train_on_responses_only`](https://docs.unsloth.ai/basics/errors) | 표지 불일치는 학습 중에야 드러남 | "학습 토큰 0개" 샘플을 미리 오류로 표시 |
-
-대안이 더 나은 경우: 실제 학습 설정의 collator·패킹까지 반영한 결과가 필요하면 Axolotl `preprocess --debug` 나 TRL 이 정확합니다(이 도구는 템플릿·토크나이저·잘림까지만 재현). 설치 없이 허브의 아무 모델이나 한 대화만 빨리 렌더해 보려면 HF playground 가 더 간편합니다.
+- 학습 전에 데이터셋 전체를 실제 템플릿·토크나이저로 렌더해 학습 토큰 0개, 잘림, 템플릿 오류를 미리 보고 싶을 때, 또는 CI 에서 같은 검사를 돌리고 싶을 때 이 도구가 맞습니다(이 도구는 템플릿·토크나이저·잘림까지만 재현합니다).
+- 실제 학습 설정의 collator·패킹까지 반영한 확인이 필요하면 [Axolotl `preprocess`](https://docs.axolotl.ai/docs/cli.html) 나 [TRL](https://huggingface.co/docs/trl/chat_templates) 을 쓰세요. 한 대화만 빠르게 렌더하려면 [HF chat-template-playground](https://huggingface.co/spaces/huggingfacejs/chat-template-playground) 가 간편합니다.
 
 (조회일 2026-11-10)
 
