@@ -1,40 +1,38 @@
 # sft-template-lens
 
-**한국어** | [English](README.en.md)
+**English** | [한국어](README.ko.md)
 
-> **English summary** — sft-template-lens renders your fine-tuning JSONL (OpenAI `messages`, ShareGPT or Alpaca) with a model's real chat template and tokenizer, then shows which tokens are trained (loss mask), which samples lose their answer to `max_seq_length` truncation, and which lines break the template. It is for people running LoRA/SFT who want to catch "loss is 0", "System role not supported" and "answer cut off" before training. It runs fully in the browser (your data is never uploaded) and as a Node CLI for CI: `npm ci && npm run build && open dist/index.html`, or `npm ci && npm run build:cli && node dist-cli/cli.mjs check data.jsonl --demo`.
+sft-template-lens renders your fine-tuning JSONL (OpenAI `messages`, ShareGPT or Alpaca) with a model's real chat template and tokenizer, then shows which tokens are trained (loss mask), which samples lose their answer to `max_seq_length` truncation, and which lines break the template. It is for people running LoRA/SFT who want to catch "loss is 0", "System role not supported" and "answer cut off" before training. The web UI runs fully in the browser (your data is never uploaded) and the Node CLI is for CI; both use the same checking engine: `npm ci && npm run build && open dist/index.html`, or `npm ci && npm run build:cli && node dist-cli/cli.mjs check data.jsonl --demo`.
 
-파인튜닝 학습 파일(JSONL)을 모델의 **실제 채팅 템플릿과 토크나이저로 미리 렌더**해서, 어떤 토큰이 학습되는지, 어느 샘플이 길이 제한에 잘려 정답을 잃는지, 어느 줄이 템플릿 오류를 내는지를 학습 전에 보여 주는 도구입니다. 웹 화면(브라우저 안에서만 처리)과 CLI(CI용)가 같은 검사 엔진을 씁니다.
+![Full screen: summary cards, length distribution, problem table](docs/images/01-overview.png)
+*The first screen after checking 12 lines of practice demo data. The band at the top tells you it is "practice mock mode".*
 
-![전체 화면: 요약 카드, 길이 분포, 문제 표](docs/images/01-overview.png)
-*연습용 데모 데이터 12줄을 검사한 첫 화면. 위쪽 띠는 "연습용 목(mock) 모드"임을 알려 줍니다.*
+## Who it is for
 
-## 이런 분께
+- People who run LoRA/SFT themselves and lose time because "loss 0" or "all labels -100" only shows up after launching a training run
+- People who switch models (for example from Qwen2.5 to Qwen3) and want to see how the data renders when the chat template differs
+- People who want CI to automatically filter out format errors when a dataset PR comes in
 
-- LoRA·SFT 를 직접 돌리는데, 학습을 한 번 돌려 봐야 "손실 0"·"라벨 전부 -100"이 드러나서 시간을 잃은 분
-- 모델을 바꿨을 때(예: Qwen2.5 에서 Qwen3 로) 채팅 템플릿이 달라져 데이터가 어떻게 렌더되는지 확인하고 싶은 분
-- 데이터셋 PR 이 들어올 때 CI 에서 형식 오류를 자동으로 걸러 내고 싶은 분
+## Why you need it: the proof-sheet analogy
 
-## 왜 필요한가: 교정쇄 비유
+Just as you get a **proof** typeset in the real page format before handing a manuscript to the printer, this tool sets your data once with the real template before training.
 
-인쇄소에 원고를 넘기기 전에 실제 판형으로 짠 **교정쇄**를 받아 보듯이, 학습 전에 데이터를 실제 템플릿으로 한 번 짜 보는 도구입니다.
+- Manuscript = JSONL, page format = chat template, type = tokenizer
+- The parts that get the red pen = trained tokens (the assistant's answers)
+- Lines pushed off the page = tokens cut by `max_seq_length`
 
-- 원고 = JSONL, 판형 = 채팅 템플릿, 활자 = 토크나이저
-- 빨간 펜을 맞을 부분 = 학습되는 토큰(어시스턴트 답)
-- 판 밖으로 밀려나는 줄 = `max_seq_length` 에 잘리는 토큰
+There are four failures to catch before training.
 
-학습 전에 잡고 싶은 실패는 네 가지입니다.
-
-| 실패 | 학습 중 보이는 모습 | 이 도구의 표시 |
+| Failure | What you see during training | This tool's flag |
 |---|---|---|
-| 학습 토큰이 0개 | 손실 0, 라벨이 전부 -100 | E004, E005 |
-| 정답이 길이 제한에 잘림 | 긴 프롬프트 샘플이 조용히 무의미해짐 | E005, W101 |
-| 템플릿이 역할을 거부 | `System role not supported` 같은 예외 | E003 |
-| 줄이 깨졌거나 형식이 다름 | `KeyError: role` 등 | E001, E002 |
+| 0 trained tokens | Loss 0, all labels -100 | E004, E005 |
+| The answer is cut by the length limit | Samples with long prompts silently become meaningless | E005, W101 |
+| The template rejects a role | An exception such as `System role not supported` | E003 |
+| A line is broken or in a different format | `KeyError: role` and the like | E001, E002 |
 
-## 설치
+## Installation
 
-전제: Node.js 22.12.0 이상(`node --version` 으로 확인). 설치는 `brew install node`(macOS) 또는 [nodejs.org](https://nodejs.org/)에서 하세요. 최소 리눅스 환경에서는 `git` 과 Node.js 만 있으면 됩니다. Python 은 필요 없습니다.
+Prerequisite: Node.js 22.12.0 or later (check with `node --version`). Install it with `brew install node` (macOS) or from [nodejs.org](https://nodejs.org/). In a minimal Linux environment you only need `git` and Node.js. Python is not needed.
 
 ```bash
 git clone https://github.com/LeeGyeongPil/sft-template-lens.git
@@ -42,11 +40,11 @@ cd sft-template-lens
 npm ci
 ```
 
-아직 npm 레지스트리에는 올리지 않았습니다(`npx sft-template-lens` 는 게시 후에 가능).
+It has not been published to the npm registry yet (`npx sft-template-lens` will be possible after publishing).
 
-## 빠르게 시작하기 (30초)
+## Quick start (30 seconds)
 
-웹 화면: 정적 단일 파일로 빌드해서 브라우저로 엽니다. 서버가 필요 없습니다.
+Web UI: build it as a static single file and open it in a browser. No server is needed.
 
 ```bash
 npm run build
@@ -57,11 +55,11 @@ npm run check:static
 static ok: single file, 0 external refs; gitignore ok
 ```
 
-(`gitignore ok` 는 git 저장소 안에서 실행할 때만 나옵니다. 압축 파일로 받은 폴더처럼 git 저장소가 아니면 `gitignore check skipped (not a git checkout)` 가 대신 나옵니다.)
+(`gitignore ok` appears only when run inside a git repository. If the folder is not a git repository, such as one downloaded as an archive, `gitignore check skipped (not a git checkout)` appears instead.)
 
-`dist/index.html` 을 브라우저로 열면 됩니다(`file://` 로 열려요). 개발 서버를 쓰려면 `npm start`.
+Just open `dist/index.html` in a browser (it opens via `file://`). To use the development server, run `npm start`.
 
-CLI: 번들된 연습용 데이터를 검사합니다. 오류가 있으면 종료 코드가 1 입니다.
+CLI: check the bundled practice data. If there are errors, the exit code is 1.
 
 ```bash
 npm run build:cli
@@ -92,42 +90,42 @@ findings (errors first, up to 15):
 exit=1
 ```
 
-(`...` 는 줄여 쓴 부분입니다. 실제로는 15개까지 나옵니다.)
+(`...` marks an abridged part. In reality up to 15 are printed.)
 
-![CLI 요약 리포트와 종료 코드 1](docs/images/05-cli-ci.png)
-*같은 검사의 터미널 화면. 오류가 있어서 종료 코드가 1 입니다. (이미지는 0.1.0 시점 화면이라 버전 표시가 0.1.0 입니다.)*
+![CLI summary report and exit code 1](docs/images/05-cli-ci.png)
+*The terminal view of the same check. There are errors, so the exit code is 1. (The image is from version 0.1.0, so it shows 0.1.0 as the version.)*
 
-참고: 이 화면(05·06)의 프롬프트는 `sft-template-lens check ...` 로 보입니다. 이 이름은 npm 으로 설치했을 때 쓰는 명령(bin)이고, 소스를 clone 해서 쓸 때는 같은 인자로 `node dist-cli/cli.mjs check ...` 를 실행합니다. 두 방식은 같은 코드를 실행하며 출력도 같습니다.
+Note: the prompt in these screens (05 and 06) looks like `sft-template-lens check ...`. That name is the command (bin) used when installed through npm; when using a cloned source, run `node dist-cli/cli.mjs check ...` with the same arguments. Both ways run the same code and produce the same output.
 
-## 사용법
+## Usage
 
-### 1. 화면 둘러보기
+### 1. A tour of the screen
 
-URL 해시로 화면 상태를 지정할 수 있습니다: `dist/index.html#template=<이름>&sample=<줄 번호>&max=<토큰 수>`. 샘플 번호는 JSONL 의 **줄 번호**(1부터, 깨진 줄 포함)입니다.
+You can set the screen state with the URL hash: `dist/index.html#template=<name>&sample=<line number>&max=<token count>`. The sample number is the JSONL **line number** (from 1, including broken lines).
 
-**(a) 어시스턴트 턴만 정확히 학습되는 템플릿** — `#template=smollm3&sample=1`
+**(a) A template where only the assistant turns are trained exactly** — `#template=smollm3&sample=1`
 
-![SmolLM3 템플릿의 정확한 마스크](docs/images/02-exact-mask.png)
-*초록이 학습되는 토큰, 회색이 마스크된 토큰입니다. 배지 "마스크 정확"은 템플릿에 `{% generation %}` 표지가 있다는 뜻입니다.*
+![Exact mask for the SmolLM3 template](docs/images/02-exact-mask.png)
+*Green marks trained tokens and gray marks masked tokens. The "exact mask" badge means the template has `{% generation %}` markers.*
 
-**(b) 길이 제한에 정답이 잘리는 샘플** — `#template=smollm2&sample=4&max=256`
+**(b) A sample whose answer is cut by the length limit** — `#template=smollm2&sample=4&max=256`
 
-![길이 제한으로 잘린 샘플의 토큰 색칠 영역](docs/images/03-truncated.png)
-*(토큰 색칠 영역만 잘라 보여 줍니다.) 긴 프롬프트가 256 토큰을 넘어, 오른쪽부터 잘리는 영역(빗금·흐림)에 정답이 전부 들어갑니다. 학습 토큰 0개이므로 E005 입니다.*
+![Token-coloring area of a sample truncated by the length limit](docs/images/03-truncated.png)
+*(Only the token-coloring area is cropped.) The long prompt exceeds 256 tokens, and the whole answer falls into the area cut from the right (hatched and faded). With 0 trained tokens, this is E005.*
 
-**(c) 템플릿이 바뀌면 같은 대화도 달라진다** — `#template=qwen3&sample=2`
+**(c) When the template changes, the same conversation changes too** — `#template=qwen3&sample=2`
 
-![Qwen3 템플릿의 W110 경고와 근사 마스크 배지](docs/images/04-non-prefix.png)
-*Qwen3 템플릿은 마지막 어시스턴트 턴에만 `<think>` 블록을 붙입니다(W110). 표지가 없어서 배지는 "마스크 근사"입니다.*
+![W110 warning and approximate-mask badge for the Qwen3 template](docs/images/04-non-prefix.png)
+*The Qwen3 template attaches a `<think>` block only to the last assistant turn (W110). With no markers, the badge says "approximate mask".*
 
-### 2. 내 데이터·내 모델로 검사
+### 2. Checking your own data and your own model
 
-- 화면에 `train.jsonl` 을 끌어다 놓으면 형식(OpenAI `messages`, ShareGPT `conversations`, Alpaca `instruction/output`)을 자동으로 판별합니다. 데이터는 브라우저 메모리에서만 처리하며 어디에도 보내지 않습니다.
-- 템플릿 소스는 세 가지입니다. 번들 목, 허브 모델 ID(예: `Qwen/Qwen2.5-0.5B-Instruct`, 모델 파일만 요청), 로컬 파일(`tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja`). 별도 `chat_template.jinja` 가 있으면 그쪽이 우선입니다.
-- 게이트 모델(예: `google/gemma-2-2b-it`)은 인증이 없으면 401 이므로 안내 메시지가 뜹니다. 로컬 파일을 올리거나 비게이트 미러를 쓰세요. 이 버전은 토큰 입력을 지원하지 않습니다.
-- 실제 모드(허브)는 `tokenizer.json` 이 수 MB 에서 십수 MB 라 네트워크 상태에 따라 느릴 수 있습니다(공유 자원 사용). 목 모드는 오프라인이라 즉시 끝납니다.
+- Drag `train.jsonl` onto the screen and it detects the format automatically (OpenAI `messages`, ShareGPT `conversations`, Alpaca `instruction/output`). The data is processed only in browser memory and is not sent anywhere.
+- There are three template sources: the bundled mock, a hub model ID (for example `Qwen/Qwen2.5-0.5B-Instruct`; only the model files are requested), and local files (`tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja`). If a separate `chat_template.jinja` exists, it takes priority.
+- Gated models (for example `google/gemma-2-2b-it`) return 401 without authentication, so a guidance message appears. Upload local files or use an ungated mirror. This version does not support token input.
+- In real mode (hub), `tokenizer.json` is several MB to over ten MB, so it can be slow depending on the network (it uses shared resources). Mock mode is offline and finishes instantly.
 
-### 3. CLI 와 CI
+### 3. CLI and CI
 
 ```bash
 # 허브 모델로 (공개 모델)
@@ -140,25 +138,27 @@ node dist-cli/cli.mjs check data/train.jsonl --template-dir ./tok --max-seq-len 
 node dist-cli/cli.mjs check examples/demo.jsonl --demo --show 1 --fail-on never
 ```
 
-`NODE_USE_ENV_PROXY=1` 은 프록시 환경에서만 필요합니다. 위 예의 `--show` 값은 소스 줄 번호입니다. 색은 ANSI 이스케이프로 출력되므로 색을 지원하는 터미널에서 보세요.
+(Comments above: "with a hub model (public model)", "with files in a local folder", "view per-token trained/masked status of the line-1 sample in color (green = trained)".)
 
-| 옵션 | 뜻 |
+`NODE_USE_ENV_PROXY=1` is needed only in a proxy environment. The `--show` value in the example above is a source line number. Colors are printed as ANSI escapes, so view them in a terminal that supports color.
+
+| Option | Meaning |
 |---|---|
-| `--demo`, `--template <이름>` | 번들 연습용 목. 이름: `smollm2`, `smollm3`, `qwen2_5`, `qwen3`, `system-unsupported` |
-| `--template-dir <폴더>` | 로컬 `tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja` |
-| `--model <소유자/이름>` | 공개 허브 모델 |
-| `--max-seq-len <n>` | 오른쪽 잘림 기준(기본 2048) |
-| `--date <YYYY-MM-DD>` | 날짜를 찍는 템플릿용 고정 날짜(기본 2026-01-01) |
-| `--fail-on error\|warning\|never` | 종료 코드 1 의 기준(기본 error) |
-| `--json` | 요약과 결과를 JSON 으로 |
-| `--show <줄 번호>` | 그 소스 줄 샘플의 토큰별 학습/마스크를 ANSI 색으로 출력(초록 = 학습, 회색 = 마스크, 흐린 취소선 = `--max-seq-len` 으로 잘림). 줄바꿈 토큰은 `↵` 로 표시. 파일에 없는 줄 번호(빈 줄 포함)면 종료 코드 2. 깨진 줄은 렌더되지 않았다는 안내만 나오고, 종료 코드는 `--fail-on` 기준을 따름 |
-| `--out-clean <경로>` | 오류 없는 샘플을 `{"messages": [...]}` JSONL 로 저장 |
-| `--out-issues <경로>` | 모든 결과를 JSONL 로 저장 |
-| `--rules` | 규칙 목록 출력 |
+| `--demo`, `--template <name>` | Bundled practice mock. Names: `smollm2`, `smollm3`, `qwen2_5`, `qwen3`, `system-unsupported` |
+| `--template-dir <folder>` | Local `tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja` |
+| `--model <owner/name>` | A public hub model |
+| `--max-seq-len <n>` | Right-truncation limit (default 2048) |
+| `--date <YYYY-MM-DD>` | Fixed date for templates that print a date (default 2026-01-01) |
+| `--fail-on error\|warning\|never` | Criterion for exit code 1 (default error) |
+| `--json` | Summary and results as JSON |
+| `--show <line number>` | Prints the per-token trained/masked status of the sample at that source line in ANSI colors (green = trained, gray = masked, faded strikethrough = cut by `--max-seq-len`). Newline tokens are shown as `↵`. If the line number is not in the file (including blank lines), the exit code is 2. For a broken line, only a note that it was not rendered is printed, and the exit code follows the `--fail-on` criterion |
+| `--out-clean <path>` | Saves the error-free samples as `{"messages": [...]}` JSONL |
+| `--out-issues <path>` | Saves all results as JSONL |
+| `--rules` | Prints the rule list |
 
-종료 코드: 0 정상, 1 기준 이상의 발견, 2 사용법·로딩 오류. 빈 파일(또는 빈 줄만 있는 파일)도 경로를 잘못 준 것으로 보고 2 로 끝나며 `The file has no JSONL rows. Check the path, or write one JSON object per line.` 를 출력합니다. `.json` 배열 파일은 `jq -c ".[]" in.json > out.jsonl` 로 JSONL 로 바꾸세요.
+Exit codes: 0 normal, 1 a finding at or above the criterion, 2 usage or loading error. An empty file (or a file with only blank lines) is also treated as a wrong path and ends with 2, printing `The file has no JSONL rows. Check the path, or write one JSON object per line.` Convert a `.json` array file to JSONL with `jq -c ".[]" in.json > out.jsonl`.
 
-GitHub Actions 에서 데이터셋 PR 을 검사하는 예:
+An example of checking a dataset PR in GitHub Actions:
 
 ```yaml
 - uses: actions/setup-node@v7.1.0
@@ -168,104 +168,104 @@ GitHub Actions 에서 데이터셋 PR 을 검사하는 예:
 - run: node dist-cli/cli.mjs check data/train.jsonl --template-dir ./tok --max-seq-len 2048
 ```
 
-템플릿을 바꿔 보면 같은 데이터에서 경고가 달라집니다.
+If you change the template, the warnings for the same data change.
 
 ```bash
 node dist-cli/cli.mjs check examples/demo.jsonl --demo --template qwen3 --fail-on never; echo "exit=$?"
 ```
 
-![Qwen3 템플릿 기준 CLI 결과(W108, W110 포함)](docs/images/06-cli-qwen3.png)
-*기본 템플릿과 비교해 W108, W110 이 추가로 뜹니다(W107 은 둘 다 표지가 없어서 공통). `--fail-on never` 라서 종료 코드는 0 입니다.*
+![CLI result for the Qwen3 template (including W108 and W110)](docs/images/06-cli-qwen3.png)
+*Compared with the default template, W108 and W110 additionally appear (W107 is common to both because neither has markers). With `--fail-on never`, the exit code is 0.*
 
-## 검사 규칙
+## Check rules
 
-규칙 ID 는 CI 에서 매칭할 수 있도록 바꾸지 않습니다(`node dist-cli/cli.mjs --rules` 로도 볼 수 있음).
+Rule IDs are never changed so you can match on them in CI (you can also see them with `node dist-cli/cli.mjs --rules`).
 
-| ID | 수준 | 뜻 |
+| ID | Level | Meaning |
 |---|---|---|
-| E001 | 오류 | JSON 파싱 실패(줄 번호 포함, 나머지 줄은 계속 처리) |
-| E002 | 오류 | 형식 판별 불가 또는 필수 키 없음 |
-| E003 | 오류 | 템플릿 렌더 예외(예: system 미지원 템플릿) |
-| E004 | 오류 | 학습 토큰 0개(잘림 전) |
-| E005 | 오류 | 잘림 후 학습 토큰 0개 |
-| W101 | 경고 | 일부 학습 토큰이 잘림(잃은 개수 표시) |
-| W102 | 경고 | 역할 순서 위반(같은 역할 연속, 마지막이 assistant 아님) |
-| W103 | 경고 | 빈 어시스턴트 답 |
-| W104 | 경고 | 중복 샘플(정규화 후 같음) |
-| W105 | 경고 | 이중 BOS 위험 |
-| W106 | 경고 | 날짜 의존 템플릿(고정 날짜로 렌더) |
-| W107 | 경고 | 근사 마스크(generation 표지 없음) |
-| W108 | 경고 | JS 와 Python Jinja 에서 다를 수 있는 구문 사용 |
-| W109 | 경고 | system 내용이 렌더 결과에 없음(템플릿이 조용히 버림) |
-| W110 | 경고 | 비접두 템플릿 |
-| W111 | 경고 | 근사 마스크 계산 실패(마스크를 숨기고 이유 표시) |
-| W112 | 경고 | 여러 데이터 형식이 섞임 |
+| E001 | Error | JSON parse failure (includes the line number; remaining lines are still processed) |
+| E002 | Error | Format cannot be detected, or required keys are missing |
+| E003 | Error | Template render exception (for example a template that does not support system) |
+| E004 | Error | 0 trained tokens (before truncation) |
+| E005 | Error | 0 trained tokens after truncation |
+| W101 | Warning | Some trained tokens are cut (the number lost is shown) |
+| W102 | Warning | Role-order violation (same role twice in a row, last turn is not assistant) |
+| W103 | Warning | Empty assistant answer |
+| W104 | Warning | Duplicate sample (equal after normalization) |
+| W105 | Warning | Risk of double BOS |
+| W106 | Warning | Date-dependent template (rendered with a fixed date) |
+| W107 | Warning | Approximate mask (no generation markers) |
+| W108 | Warning | Uses syntax that can differ between JS and Python Jinja |
+| W109 | Warning | System content is missing from the rendered output (the template silently dropped it) |
+| W110 | Warning | Non-prefix template |
+| W111 | Warning | Approximate-mask computation failed (the mask is hidden and the reason shown) |
+| W112 | Warning | Multiple data formats are mixed |
 
-## 동작 원리
+## How it works
 
 ```mermaid
 flowchart LR
-  J[JSONL] --> N[형식 판별 정규화]
-  S[템플릿 소스<br/>번들 허브 로컬] --> T[템플릿 렌더]
+  J[JSONL] --> N["Format detection and normalization"]
+  S["Template source<br/>bundled, hub, local"] --> T["Render template"]
   N --> T
-  T --> K[토큰화]
-  K --> M[학습 마스크]
-  M --> X[길이 잘림]
-  X --> C[규칙 검사]
-  C --> UI[웹 화면]
-  C --> CLI[CLI 종료 코드]
+  T --> K[Tokenize]
+  K --> M["Training mask"]
+  M --> X["Length truncation"]
+  X --> C["Rule checks"]
+  C --> UI["Web UI"]
+  C --> CLI["CLI exit code"]
 ```
 
-1. **형식 판별 정규화**: 세 가지 형식을 모두 `role`/`content` 목록으로 바꿉니다.
-2. **템플릿 렌더**: `@huggingface/jinja` 로 모델의 채팅 템플릿을 그대로 렌더해 문자열을 만듭니다. 날짜를 찍는 템플릿(`strftime_now`)은 고정 날짜를 씁니다. 그래서 한국어 로캘·서울 시간대에서도 같은 결과입니다.
-3. **토큰화**: `@huggingface/tokenizers` 로 `add_special_tokens=false` 로 인코딩합니다(템플릿이 이미 특수 토큰을 넣기 때문).
-4. **학습 마스크**:
-   - 정확(`exact-generation`): 템플릿에 `{% generation %}` 표지가 있으면 그 구간만 학습합니다. TRL 의 `assistant_only_loss` 와 같은 결과를 노립니다.
-   - 근사(`approx-content`): 표지가 없으면 어시스턴트 content 앞뒤에 보이지 않는 표식 문자를 넣어 대화 전체를 **한 번만** 렌더하고 위치를 찾습니다. 턴 끝 특수 토큰(예: `<|im_end|>`)까지 포함합니다. 표식을 지운 결과가 일반 렌더와 다르면 W111 로 마스크를 숨깁니다.
-   - 메시지를 하나씩 덧붙여 렌더한 차이로 마스크를 만드는 방식은 쓰지 않습니다. Qwen3 처럼 마지막 턴에만 `<think>` 를 붙이는 템플릿에서 틀리기 때문입니다(그 사실은 W110 으로 알려 줍니다).
-5. **길이 잘림**: `max_seq_length` 로 오른쪽부터 자른 뒤 남는 학습 토큰 수를 셉니다. 0 이면 E005 입니다.
+1. **Format detection and normalization**: converts all three formats into a `role`/`content` list.
+2. **Template rendering**: renders the model's chat template as-is with `@huggingface/jinja` to produce a string. Templates that print a date (`strftime_now`) use a fixed date. So the result is the same even with a Korean locale and the Seoul time zone.
+3. **Tokenization**: encodes with `@huggingface/tokenizers` using `add_special_tokens=false` (because the template already inserts the special tokens).
+4. **Training mask**:
+   - Exact (`exact-generation`): if the template has `{% generation %}` markers, only those spans are trained. It aims for the same result as TRL's `assistant_only_loss`.
+   - Approximate (`approx-content`): if there are no markers, it places invisible marker characters around the assistant content, renders the whole conversation **once**, and finds the positions. It includes the end-of-turn special token (for example `<|im_end|>`). If the result with the markers removed differs from the normal render, the mask is hidden with W111.
+   - It does not build the mask from the difference between renders made by appending messages one at a time. That is wrong for templates like Qwen3 that attach `<think>` only to the last turn (W110 reports that fact).
+5. **Length truncation**: cuts from the right at `max_seq_length`, then counts the remaining trained tokens. If it is 0, that is E005.
 
-## 연습용 목(mock) 모드
+## Practice mock mode
 
-설치 없이 바로 써 보도록, 아래 파일을 레포에 넣어 두었습니다(출처·커밋은 `fixtures/README.md`). 아래 중 직접 작성한 템플릿을 뺀 나머지는 Apache-2.0 이고, 전문은 `LICENSES/Apache-2.0.txt` 에 있습니다.
+So you can try it with no installation, the files below are included in the repository (sources and commits are in `fixtures/README.md`). Apart from the hand-written template, the rest of the files below are Apache-2.0, and the full text is in `LICENSES/Apache-2.0.txt`.
 
-- SmolLM2-135M-Instruct 의 토크나이저: 일부 어휘 항목을 뺀 **수정본**이라 일부 영어 단어의 토큰 수가 원본과 1~2개 다를 수 있습니다(`fixtures/README.md`).
-- 실제 공개 채팅 템플릿 4종(SmolLM2, SmolLM3, Qwen2.5, Qwen3)
-- Gemma 2 의 system 예외를 흉내 낸 직접 작성 템플릿(`system-unsupported.jinja`): 이 레포 라이선스(MIT)입니다.
+- The tokenizer of SmolLM2-135M-Instruct: a **modified copy** with some vocabulary entries removed, so the token count of some English words can differ from the original by 1 or 2 (`fixtures/README.md`).
+- Four real public chat templates (SmolLM2, SmolLM3, Qwen2.5, Qwen3)
+- A hand-written template that imitates Gemma 2's system exception (`system-unsupported.jinja`): it is under this repository's license (MIT).
 
-가짜 출력이 아니라 **실제 Jinja 렌더와 실제 BPE 토큰화**를 하지만, 모든 템플릿을 SmolLM2 토크나이저로 토큰화합니다. 그래서 Qwen·SmolLM3 템플릿의 토큰 수는 진짜 모델과 다를 수 있습니다. 실제 수치는 허브나 로컬 모드로 확인하세요. Llama·Gemma 템플릿은 라이선스 때문에 번들하지 않습니다.
+It does **real Jinja rendering and real BPE tokenization**, not fake output, but it tokenizes every template with the SmolLM2 tokenizer. So the token counts of the Qwen and SmolLM3 templates can differ from the real models. Check actual numbers with hub or local mode. Llama and Gemma templates are not bundled because of licensing.
 
-## 알려진 한계
+## Known limits
 
-- **브라우저 확인**: 이 화면은 빌드 검사와 가상 DOM 테스트(happy-dom)로 확인했습니다. 실제 브라우저에서의 모양은 스크린샷으로 별도로 확인합니다.
-- **Python 과의 토크나이저 차이**: transformers 5.22.2 의 `GPT2Tokenizer` 는 `tokenizer.json` 의 숫자 분리(Digits) 설정을 무시합니다. SmolLM2 에서 `"\n\n6"` 은 Python transformers 가 `[198,198,38]`, Rust `tokenizers` 와 이 도구는 `[1116,38]` 입니다. 이 도구의 기준값은 `tokenizer.json` 을 직접 읽는 Rust `tokenizers` 입니다. 학습에 transformers 의 `GPT2Tokenizer` 를 쓰면 숫자가 있는 텍스트의 토큰 수가 조금 다를 수 있습니다.
-- **Jinja 구현 차이**: `@huggingface/jinja` 와 Python Jinja 가 일부 구문에서 다를 수 있습니다(W108 이 위험 구문을 알려 줍니다). Python 과 렌더 대조를 한 것은 번들 템플릿 4종뿐입니다.
-- **게이트 모델**: 인증이 필요한 모델은 401 이 나며 토큰 입력은 아직 없습니다. 로컬 파일을 쓰세요.
-- **근사 마스크**: 템플릿이 넣는 `<think>\n\n</think>` 같은 블록은 content 밖이라 학습 표시에 들어가지 않습니다.
-- **고정 날짜**: 날짜를 찍는 템플릿은 `--date`(기본 2026-01-01)로 렌더합니다. 실제 학습 라이브러리가 쓰는 날짜와 다를 수 있습니다.
-- **`--show` 와 `--json`**: 함께 쓰면 JSON 뒤에 색 토큰 출력이 같은 stdout 에 붙어 전체가 유효한 JSON 이 아닙니다. 따로 실행하세요. 옵션 표에 `-h/--help`, `-v/--version` 행은 아직 없습니다.
-- **범위 밖**: 멀티모달(이미지 토큰), 도구 호출 메시지의 정밀 마스크, `prompt`/`completion` 형식, 웹 워커(수십만 줄), TRL 학습용 템플릿 자동 교체.
-- Node 22.12.0 은 CI 매트릭스에서 확인하는 대상입니다(작성 환경은 Node 26).
+- **Browser verification**: this UI was verified with build checks and virtual-DOM tests (happy-dom). Its appearance in a real browser is checked separately with screenshots.
+- **Tokenizer differences from Python**: `GPT2Tokenizer` in transformers 5.22.2 ignores the digit-splitting (Digits) setting in `tokenizer.json`. For SmolLM2, `"\n\n6"` is `[198,198,38]` in Python transformers, and `[1116,38]` in Rust `tokenizers` and in this tool. This tool's reference is Rust `tokenizers`, which reads `tokenizer.json` directly. If you train with transformers' `GPT2Tokenizer`, the token counts of text containing digits may differ slightly.
+- **Jinja implementation differences**: `@huggingface/jinja` and Python Jinja can differ on some syntax (W108 reports risky syntax). Render comparison against Python was done only for the four bundled templates.
+- **Gated models**: models that need authentication return 401, and there is no token input yet. Use local files.
+- **Approximate mask**: blocks the template inserts, such as `<think>\n\n</think>`, are outside the content, so they are not included in the trained marking.
+- **Fixed date**: templates that print a date are rendered with `--date` (default 2026-01-01). It can differ from the date the real training library uses.
+- **`--show` and `--json`**: used together, the colored token output is appended to the same stdout after the JSON, so the whole is not valid JSON. Run them separately. The option table does not yet have rows for `-h/--help` and `-v/--version`.
+- **Out of scope**: multimodal (image tokens), precise masking of tool-call messages, the `prompt`/`completion` format, web workers (hundreds of thousands of lines), and automatic replacement of templates for TRL training.
+- Node 22.12.0 is checked in the CI matrix (the authoring environment was Node 26).
 
-## 언제 쓰나
+## When to use it
 
-- 학습 전에 데이터셋 전체를 실제 템플릿·토크나이저로 렌더해 학습 토큰 0개, 잘림, 템플릿 오류를 미리 보고 싶을 때, 또는 CI 에서 같은 검사를 돌리고 싶을 때 이 도구가 맞습니다(이 도구는 템플릿·토크나이저·잘림까지만 재현합니다).
-- 실제 학습 설정의 collator·패킹까지 반영한 확인이 필요하면 [Axolotl `preprocess`](https://docs.axolotl.ai/docs/cli.html) 나 [TRL](https://huggingface.co/docs/trl/chat_templates) 을 쓰세요. 한 대화만 빠르게 렌더하려면 [HF chat-template-playground](https://huggingface.co/spaces/huggingfacejs/chat-template-playground) 가 간편합니다.
+- This tool fits when you want to render the whole dataset with the real template and tokenizer before training to see 0 trained tokens, truncation and template errors in advance, or when you want to run the same check in CI (it reproduces only up to the template, tokenizer and truncation).
+- If you need verification that also reflects the collator and packing of your actual training setup, use [Axolotl `preprocess`](https://docs.axolotl.ai/docs/cli.html) or [TRL](https://huggingface.co/docs/trl/chat_templates). To render just one conversation quickly, the [HF chat-template-playground](https://huggingface.co/spaces/huggingfacejs/chat-template-playground) is handy.
 
-(조회일 2026-11-10)
+(Checked on 2026-11-10)
 
-## 자주 겪는 문제
+## Common problems
 
-| 증상 | 원인 | 해결 |
+| Symptom | Cause | Fix |
 |---|---|---|
-| 허브 ID 입력 후 401 안내가 뜸 | 게이트(승인 필요) 모델 | 로컬 `tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja` 를 올리거나 비게이트 미러 사용 |
-| 짧은 샘플까지 E005 가 많이 나옴 | 템플릿이 붙이는 기본 시스템 프롬프트가 길어서 `--max-seq-len` 을 넘기는 경우(예: SmolLM3 는 약 270 토큰이라 `--max-seq-len 256` 이면 정답이 잘림) | `--max-seq-len` 을 올림. 실제 학습에서도 같은 일이 일어납니다 |
-| CLI 가 허브에 연결 못 함 | 프록시 환경 | `NODE_USE_ENV_PROXY=1` 을 앞에 붙임 |
-| 마스크가 안 보이고 W111 | 템플릿이 content 를 가공해 근사 위치를 못 찾음 | 템플릿에 `{% generation %}` 표지를 넣거나 정확 마스크 템플릿 사용 |
-| `npm test` 가 CLI 파일이 없다고 함 | CLI 빌드 전 | `npm test` 는 `pretest` 로 먼저 빌드합니다. 직접 `npx vitest` 를 쓰면 `npm run build:cli` 를 먼저 |
-| 템플릿에 날짜가 찍혀 학습 데이터가 매번 다름 | 날짜 의존 템플릿(W106) | `--date` 로 고정 |
+| A 401 message appears after entering a hub ID | A gated (approval-required) model | Upload local `tokenizer.json`, `tokenizer_config.json` and `chat_template.jinja`, or use an ungated mirror |
+| Many E005 even on short samples | The default system prompt the template adds is long and exceeds `--max-seq-len` (for example SmolLM3's is about 270 tokens, so with `--max-seq-len 256` the answer is cut) | Raise `--max-seq-len`. The same thing happens in real training |
+| The CLI cannot connect to the hub | A proxy environment | Prefix the command with `NODE_USE_ENV_PROXY=1` |
+| No mask is shown and W111 appears | The template processes the content, so the approximate position cannot be found | Put `{% generation %}` markers in the template or use an exact-mask template |
+| `npm test` says the CLI file is missing | The CLI has not been built yet | `npm test` builds first via `pretest`. If you run `npx vitest` directly, run `npm run build:cli` first |
+| The template prints a date, so the training data differs every time | A date-dependent template (W106) | Fix it with `--date` |
 
-## 개발·기여
+## Development and contributing
 
 ```bash
 npm ci
@@ -274,19 +274,21 @@ npm test            # 네트워크·Python 없이 동작. 50개 테스트
 npm run build && npm run check:static
 ```
 
-- 테스트는 번들 토크나이저와, 커밋된 기준값(`test/golden/parity.json`)을 씁니다. 기준값은 Python(transformers 5.22.2, jinja2 3.1.6, tokenizers 0.23.3)으로 `tools/golden/make_golden.py` 를 실행해 다시 만들 수 있습니다(`uv run --no-project --python 3.12 --with transformers==5.22.2 --with jinja2==3.1.6 python -I tools/golden/make_golden.py`).
-- 검사 엔진은 `src/core`(DOM·Node API 없음), 웹 화면은 `src/ui`, CLI 는 `src/cli` 입니다.
-- 의존성은 전부 정확한 버전으로 고정했습니다. 직접 쓰는 라이브러리: `@huggingface/jinja` 0.5.11, `@huggingface/tokenizers` 0.2.0, React 19.3.1.
-- 취약점 신고는 [SECURITY.md](SECURITY.md) 를 보세요.
+- Tests use the bundled tokenizer and committed reference values (`test/golden/parity.json`). The reference values can be regenerated by running `tools/golden/make_golden.py` with Python (transformers 5.22.2, jinja2 3.1.6, tokenizers 0.23.3) (`uv run --no-project --python 3.12 --with transformers==5.22.2 --with jinja2==3.1.6 python -I tools/golden/make_golden.py`).
+- The check engine is in `src/core` (no DOM or Node APIs), the web UI is in `src/ui`, and the CLI is in `src/cli`.
+- All dependencies are pinned to exact versions. Libraries used directly: `@huggingface/jinja` 0.5.11, `@huggingface/tokenizers` 0.2.0, React 19.3.1.
+- To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
-## 더 알아보기
+(The `npm test` comment above reads: "works without network or Python. 50 tests".)
+
+## Learn more
 
 - Hugging Face, Chat Templates: https://huggingface.co/docs/transformers/chat_templating
-- TRL, Chat templates와 assistant_only_loss: https://huggingface.co/docs/trl/chat_templates
-- Unsloth, 학습 오류와 해결: https://docs.unsloth.ai/basics/errors
+- TRL, Chat templates and assistant_only_loss: https://huggingface.co/docs/trl/chat_templates
+- Unsloth, training errors and fixes: https://docs.unsloth.ai/basics/errors
 - `@huggingface/jinja`: https://www.npmjs.com/package/@huggingface/jinja
 - `@huggingface/tokenizers`: https://www.npmjs.com/package/@huggingface/tokenizers
 
-## 라이선스
+## License
 
-MIT (`LICENSE`). 번들한 모델 파일은 원래 라이선스(Apache-2.0, `LICENSES/Apache-2.0.txt`)를 따르며 `NOTICE`, `fixtures/README.md` 에 출처와 변경 내용을 적었습니다.
+MIT (`LICENSE`). The bundled model files follow their original license (Apache-2.0, `LICENSES/Apache-2.0.txt`), and the sources and changes are recorded in `NOTICE` and `fixtures/README.md`.
