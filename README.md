@@ -67,7 +67,7 @@ node dist-cli/cli.mjs check examples/demo.jsonl --demo --max-seq-len 256; echo "
 ```
 
 ```text
-sft-template-lens 0.1.1  examples/demo.jsonl
+sft-template-lens 0.1.2  examples/demo.jsonl
 template: SmolLM2 (ChatML, no markers) + SmolLM2 tokenizer (practice mock)
 mode: practice (mock) - bundled SmolLM2 tokenizer, not the real model of this template
 mask: approx-content   max_seq_len: 256   date: 2026-01-01
@@ -149,6 +149,7 @@ node dist-cli/cli.mjs check examples/demo.jsonl --demo --show 1 --fail-on never
 | `--date <YYYY-MM-DD>` | 날짜를 찍는 템플릿용 고정 날짜(기본 2026-01-01) |
 | `--fail-on error\|warning\|never` | 종료 코드 1 의 기준(기본 error) |
 | `--json` | 요약과 결과를 JSON 으로 |
+| `--show <줄 번호>` | 그 소스 줄 샘플의 토큰별 학습/마스크를 ANSI 색으로 출력(초록 = 학습, 회색 = 마스크, 흐린 취소선 = `--max-seq-len` 으로 잘림). 줄바꿈 토큰은 `↵` 로 표시. 파일에 없는 줄 번호(빈 줄 포함)면 종료 코드 2. 깨진 줄은 렌더되지 않았다는 안내만 나오고, 종료 코드는 `--fail-on` 기준을 따름 |
 | `--out-clean <경로>` | 오류 없는 샘플을 `{"messages": [...]}` JSONL 로 저장 |
 | `--out-issues <경로>` | 모든 결과를 JSONL 로 저장 |
 | `--rules` | 규칙 목록 출력 |
@@ -240,6 +241,7 @@ flowchart LR
 - **게이트 모델**: 인증이 필요한 모델은 401 이 나며 토큰 입력은 아직 없습니다. 로컬 파일을 쓰세요.
 - **근사 마스크**: 템플릿이 넣는 `<think>\n\n</think>` 같은 블록은 content 밖이라 학습 표시에 들어가지 않습니다.
 - **고정 날짜**: 날짜를 찍는 템플릿은 `--date`(기본 2026-01-01)로 렌더합니다. 실제 학습 라이브러리가 쓰는 날짜와 다를 수 있습니다.
+- **`--show` 와 `--json`**: 함께 쓰면 JSON 뒤에 색 토큰 출력이 같은 stdout 에 붙어 전체가 유효한 JSON 이 아닙니다. 따로 실행하세요. 옵션 표에 `-h/--help`, `-v/--version` 행은 아직 없습니다.
 - **범위 밖**: 멀티모달(이미지 토큰), 도구 호출 메시지의 정밀 마스크, `prompt`/`completion` 형식, 웹 워커(수십만 줄), TRL 학습용 템플릿 자동 교체.
 - Node 22.12.0 은 CI 매트릭스에서 확인하는 대상입니다(작성 환경은 Node 26).
 
