@@ -1,5 +1,7 @@
 # sft-template-lens
 
+**한국어** | [English](README.en.md)
+
 > **English summary** — sft-template-lens renders your fine-tuning JSONL (OpenAI `messages`, ShareGPT or Alpaca) with a model's real chat template and tokenizer, then shows which tokens are trained (loss mask), which samples lose their answer to `max_seq_length` truncation, and which lines break the template. It is for people running LoRA/SFT who want to catch "loss is 0", "System role not supported" and "answer cut off" before training. It runs fully in the browser (your data is never uploaded) and as a Node CLI for CI: `npm ci && npm run build && open dist/index.html`, or `npm ci && npm run build:cli && node dist-cli/cli.mjs check data.jsonl --demo`.
 
 파인튜닝 학습 파일(JSONL)을 모델의 **실제 채팅 템플릿과 토크나이저로 미리 렌더**해서, 어떤 토큰이 학습되는지, 어느 샘플이 길이 제한에 잘려 정답을 잃는지, 어느 줄이 템플릿 오류를 내는지를 학습 전에 보여 주는 도구입니다. 웹 화면(브라우저 안에서만 처리)과 CLI(CI용)가 같은 검사 엔진을 씁니다.
