@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-sft-template-lens renders your fine-tuning JSONL (OpenAI `messages`, ShareGPT or Alpaca) with a model's real chat template and tokenizer, then shows which tokens are trained (loss mask), which samples lose their answer to `max_seq_length` truncation, and which lines break the template. It is for people running LoRA/SFT who want to catch "loss is 0", "System role not supported" and "answer cut off" before training. The web UI runs fully in the browser (your data is never uploaded) and the Node CLI is for CI; both use the same checking engine: `npm ci && npm run build && open dist/index.html`, or `npm ci && npm run build:cli && node dist-cli/cli.mjs check data.jsonl --demo`.
+sft-template-lens renders your fine-tuning JSONL (OpenAI `messages`, ShareGPT or Alpaca) with a model's real chat template and tokenizer, then shows which tokens are trained (loss mask), which samples lose their answer to `max_seq_length` truncation, and which lines break the template. It is for people running LoRA/SFT who want to catch "loss is 0", "System role not supported" and "answer cut off" before training. The web UI runs fully in the browser (your data is never uploaded) and the Node CLI is for CI; both use the same checking engine (screen and CLI messages come in English and Korean): `npm ci && npm run build && open dist/index.html`, or `npm ci && npm run build:cli && node dist-cli/cli.mjs check data.jsonl --demo`.
 
 ![Full screen: summary cards, length distribution, problem table](docs/images/01-overview.png)
 *The first screen after checking 12 lines of practice demo data. The band at the top tells you it is "practice mock mode".*
@@ -57,17 +57,17 @@ static ok: single file, 0 external refs; gitignore ok
 
 (`gitignore ok` appears only when run inside a git repository. If the folder is not a git repository, such as one downloaded as an archive, `gitignore check skipped (not a git checkout)` appears instead.)
 
-Just open `dist/index.html` in a browser (it opens via `file://`). To use the development server, run `npm start`.
+Just open `dist/index.html` in a browser (it opens via `file://`). To use the development server, run `npm start`. The screen starts in your browser language (Korean if it starts with `ko`, otherwise English); you can switch it with the language menu in the header (see [Usage](#usage)).
 
 CLI: check the bundled practice data. If there are errors, the exit code is 1.
 
 ```bash
 npm run build:cli
-node dist-cli/cli.mjs check examples/demo.jsonl --demo --max-seq-len 256; echo "exit=$?"
+node dist-cli/cli.mjs check examples/demo.jsonl --demo --max-seq-len 256 --lang en; echo "exit=$?"
 ```
 
 ```text
-sft-template-lens 0.1.2  examples/demo.jsonl
+sft-template-lens 0.2.0  examples/demo.jsonl
 template: SmolLM2 (ChatML, no markers) + SmolLM2 tokenizer (practice mock)
 mode: practice (mock) - bundled SmolLM2 tokenizer, not the real model of this template
 mask: approx-content   max_seq_len: 256   date: 2026-01-01
@@ -93,9 +93,9 @@ exit=1
 (`...` marks an abridged part. In reality up to 15 are printed.)
 
 ![CLI summary report and exit code 1](docs/images/05-cli-ci.png)
-*The terminal view of the same check. There are errors, so the exit code is 1. (The image is from version 0.1.0, so it shows 0.1.0 as the version.)*
+*The terminal view of the same check. There are errors, so the exit code is 1.*
 
-Note: the prompt in these screens (05 and 06) looks like `sft-template-lens check ...`. That name is the command (bin) used when installed through npm; when using a cloned source, run `node dist-cli/cli.mjs check ...` with the same arguments. Both ways run the same code and produce the same output.
+Note: the prompt in these screens (05, 06 and 08) looks like `sft-template-lens check ...`. That name is the command (bin) used when installed through npm; when using a cloned source, run `node dist-cli/cli.mjs check ...` with the same arguments. Both ways run the same code and produce the same output.
 
 ## Usage
 
@@ -128,23 +128,21 @@ You can set the screen state with the URL hash: `dist/index.html#template=<name>
 ### 3. CLI and CI
 
 ```bash
-# 허브 모델로 (공개 모델)
+# with a hub model (public model)
 NODE_USE_ENV_PROXY=1 node dist-cli/cli.mjs check data/train.jsonl --model Qwen/Qwen2.5-0.5B-Instruct
 
-# 로컬 폴더의 파일로
+# with files in a local folder
 node dist-cli/cli.mjs check data/train.jsonl --template-dir ./tok --max-seq-len 2048
 
-# 1번 줄 샘플의 토큰별 학습/마스크를 색으로 보기 (초록 = 학습)
+# view per-token trained/masked status of the line-1 sample in color (green = trained)
 node dist-cli/cli.mjs check examples/demo.jsonl --demo --show 1 --fail-on never
 ```
-
-(Comments above: "with a hub model (public model)", "with files in a local folder", "view per-token trained/masked status of the line-1 sample in color (green = trained)".)
 
 `NODE_USE_ENV_PROXY=1` is needed only in a proxy environment. The `--show` value in the example above is a source line number. Colors are printed as ANSI escapes, so view them in a terminal that supports color.
 
 | Option | Meaning |
 |---|---|
-| `--demo`, `--template <name>` | Bundled practice mock. Names: `smollm2`, `smollm3`, `qwen2_5`, `qwen3`, `system-unsupported` |
+| `--demo` [`--template <name>`] | Bundled practice mock. `--template` only works together with `--demo` (default `smollm2`). Names: `smollm2`, `smollm3`, `qwen2_5`, `qwen3`, `system-unsupported` |
 | `--template-dir <folder>` | Local `tokenizer.json`, `tokenizer_config.json`, `chat_template.jinja` |
 | `--model <owner/name>` | A public hub model |
 | `--max-seq-len <n>` | Right-truncation limit (default 2048) |
@@ -155,6 +153,7 @@ node dist-cli/cli.mjs check examples/demo.jsonl --demo --show 1 --fail-on never
 | `--out-clean <path>` | Saves the error-free samples as `{"messages": [...]}` JSONL |
 | `--out-issues <path>` | Saves all results as JSONL |
 | `--rules` | Prints the rule list |
+| `--lang en\|ko` | Language of the tool's own messages (help, summary, token view, `--rules`, errors). See [4. Choosing the language](#4-choosing-the-language) |
 
 Exit codes: 0 normal, 1 a finding at or above the criterion, 2 usage or loading error. An empty file (or a file with only blank lines) is also treated as a wrong path and ends with 2, printing `The file has no JSONL rows. Check the path, or write one JSON object per line.` Convert a `.json` array file to JSONL with `jq -c ".[]" in.json > out.jsonl`.
 
@@ -171,11 +170,40 @@ An example of checking a dataset PR in GitHub Actions:
 If you change the template, the warnings for the same data change.
 
 ```bash
-node dist-cli/cli.mjs check examples/demo.jsonl --demo --template qwen3 --fail-on never; echo "exit=$?"
+node dist-cli/cli.mjs check examples/demo.jsonl --demo --template qwen3 --fail-on never --lang en; echo "exit=$?"
 ```
 
 ![CLI result for the Qwen3 template (including W108 and W110)](docs/images/06-cli-qwen3.png)
 *Compared with the default template, W108 and W110 additionally appear (W107 is common to both because neither has markers). With `--fail-on never`, the exit code is 0.*
+
+### 4. Choosing the language
+
+Both the web screen and the CLI come in English and Korean.
+
+**Web**: use the language menu (English / 한국어) in the header. Your choice is saved in the browser (`localStorage` key `sft-template-lens.lang`) and survives a reload. Only on the very first visit (nothing saved yet) the screen follows the browser language: Korean if it starts with `ko`, otherwise English. The `<html lang>` attribute follows the choice. Rule names use the same two languages; rule IDs (`E001`, `W101`, ...) never change.
+
+![Header with the language menu set to English](docs/images/07-language-menu.png)
+*The header of the same screen with the menu set to English. The menu is the "Language" drop-down at the right of the title.*
+
+**CLI**: the language is decided in this order, and the first one that is set wins.
+
+1. `--lang en|ko`
+2. the `SFT_TEMPLATE_LENS_LANG` environment variable
+3. `LC_ALL`
+4. `LC_MESSAGES`
+5. `LANG`
+
+A value that starts with `ko` (for example `ko_KR.UTF-8`) means Korean; anything else, including an unknown value in the environment, means English. `--lang` accepts only `en` or `ko` (anything else exits with code 2).
+
+```bash
+node dist-cli/cli.mjs --rules --lang ko
+SFT_TEMPLATE_LENS_LANG=ko node dist-cli/cli.mjs check examples/demo.jsonl --demo --fail-on never
+```
+
+![The rule list printed with --lang en](docs/images/08-cli-rules.png)
+*`--rules --lang en` prints the rule list in English; with `--lang ko` the same list is in Korean.*
+
+Only the tool's own messages are translated. `--json`, `--out-clean`, `--out-issues`, rule IDs and the finding messages are always English and identical in both languages, so machine readers are not affected. If a CI script matches on the human-readable text, pin it with `--lang en` (or `SFT_TEMPLATE_LENS_LANG=en`), because a Korean `LANG` now gives Korean output.
 
 ## Check rules
 
@@ -243,6 +271,9 @@ It does **real Jinja rendering and real BPE tokenization**, not fake output, but
 - **Gated models**: models that need authentication return 401, and there is no token input yet. Use local files.
 - **Approximate mask**: blocks the template inserts, such as `<think>\n\n</think>`, are outside the content, so they are not included in the trained marking.
 - **Fixed date**: templates that print a date are rendered with `--date` (default 2026-01-01). It can differ from the date the real training library uses.
+- **Finding messages stay English**: the text of each finding (for example `Line 4: all 10 trained tokens are cut off ...`) comes from the check engine and is the same machine-readable string in `--json` and `issues.jsonl`, so it is not translated in either language.
+- **Error details are only partly translated**: most error messages (bad file, bad option, and similar) are fully translated. For template parse errors, tokenizer load errors and unknown errors, the leading sentence follows the selected language but the cause that follows is the original English text from the underlying library, so a Korean run can show a Korean sentence followed by an English cause. A network failure with no proxy configured (for example `fetch failed`) is also in this group: the Korean run prints a Korean sentence plus the English cause, and the English run prints only `Error: fetch failed`. The proxy hint line is correct in both languages.
+- **Hub error wording**: the gated-model message starts with `Error:` (capital E) while other errors start with `error:`, so match on the exit code (2) rather than the prefix in CI. A model ID that does not exist is reported with the same gated-or-private message, because the hub answers 401 for both; check the spelling of the ID.
 - **`--show` and `--json`**: used together, the colored token output is appended to the same stdout after the JSON, so the whole is not valid JSON. Run them separately. The option table does not yet have rows for `-h/--help` and `-v/--version`.
 - **Out of scope**: multimodal (image tokens), precise masking of tool-call messages, the `prompt`/`completion` format, web workers (hundreds of thousands of lines), and automatic replacement of templates for TRL training.
 - Node 22.12.0 is checked in the CI matrix (the authoring environment was Node 26).
@@ -263,6 +294,7 @@ It does **real Jinja rendering and real BPE tokenization**, not fake output, but
 | The CLI cannot connect to the hub | A proxy environment | Prefix the command with `NODE_USE_ENV_PROXY=1` |
 | No mask is shown and W111 appears | The template processes the content, so the approximate position cannot be found | Put `{% generation %}` markers in the template or use an exact-mask template |
 | `npm test` says the CLI file is missing | The CLI has not been built yet | `npm test` builds first via `pretest`. If you run `npx vitest` directly, run `npm run build:cli` first |
+| The CLI prints Korean text in my CI or terminal | `LANG`, `LC_ALL` or `LC_MESSAGES` starts with `ko` | Pass `--lang en` or set `SFT_TEMPLATE_LENS_LANG=en` |
 | The template prints a date, so the training data differs every time | A date-dependent template (W106) | Fix it with `--date` |
 
 ## Development and contributing
@@ -270,7 +302,7 @@ It does **real Jinja rendering and real BPE tokenization**, not fake output, but
 ```bash
 npm ci
 npm run typecheck
-npm test            # 네트워크·Python 없이 동작. 50개 테스트
+npm test            # works without network or Python. 91 tests
 npm run build && npm run check:static
 ```
 
@@ -278,8 +310,6 @@ npm run build && npm run check:static
 - The check engine is in `src/core` (no DOM or Node APIs), the web UI is in `src/ui`, and the CLI is in `src/cli`.
 - All dependencies are pinned to exact versions. Libraries used directly: `@huggingface/jinja` 0.5.11, `@huggingface/tokenizers` 0.2.0, React 19.3.1.
 - To report a vulnerability, see [SECURITY.md](SECURITY.md).
-
-(The `npm test` comment above reads: "works without network or Python. 50 tests".)
 
 ## Learn more
 
