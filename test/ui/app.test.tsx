@@ -14,9 +14,9 @@ describe("App", () => {
   test("loads the demo and shows banner, summary cards, issue table and a colored token view", async () => {
     window.location.hash = "#template=smollm2&sample=1&max=256";
     render(<App />);
-    const cards = await screen.findByLabelText("요약", {}, { timeout: 30000 });
-    expect(within(cards).getByText("샘플 수")).toBeTruthy();
-    expect(screen.getByRole("note").textContent).toContain("연습용 데모(목)");
+    const cards = await screen.findByLabelText("Summary", {}, { timeout: 30000 });
+    expect(within(cards).getByText("Samples")).toBeTruthy();
+    expect(screen.getByRole("note").textContent).toContain("Practice (mock) mode");
 
     // max=256 from the URL hash: the long-prompt sample (line 4) is E005
     const table = screen.getByRole("table");
@@ -26,7 +26,7 @@ describe("App", () => {
     expect(tokens.querySelectorAll(".chip.train").length).toBeGreaterThan(0);
     expect(tokens.querySelectorAll(".chip.masked").length).toBeGreaterThan(0);
     expect(tokens.querySelectorAll(".chip.special").length).toBeGreaterThan(0);
-    expect(screen.getByText(/마스크 근사/)).toBeTruthy();
+    expect(screen.getByText(/Mask approximate/)).toBeTruthy();
 
     // selecting the truncated sample shows hatched (cut) chips
     fireEvent.click(within(table).getAllByText(/Line 4: all/)[0]!);
@@ -36,8 +36,8 @@ describe("App", () => {
   test("a template with generation markers shows the exact-mask badge", async () => {
     window.location.hash = "#template=smollm3&sample=1";
     render(<App />);
-    await screen.findByLabelText("요약", {}, { timeout: 30000 });
-    expect(await screen.findByText(/마스크 정확/)).toBeTruthy();
+    await screen.findByLabelText("Summary", {}, { timeout: 30000 });
+    expect(await screen.findByText(/Mask exact/)).toBeTruthy();
   }, 60000);
 
   test("hash state round-trips", () => {
