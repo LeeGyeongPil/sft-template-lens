@@ -1,5 +1,6 @@
 import { useRef, useState, type DragEvent } from "react";
 import { BUNDLED_TEMPLATES } from "../../core/loaders/bundled";
+import { useLang } from "../lang";
 
 interface Props {
   template: string;
@@ -17,6 +18,7 @@ interface Props {
 
 /** Inputs: JSONL drop zone, template source (bundled, hub id, local files), max length slider, fixed date. */
 export function SourcePanel(p: Props) {
+  const { m } = useLang();
   const [hubId, setHubId] = useState("Qwen/Qwen2.5-0.5B-Instruct");
   const fileInput = useRef<HTMLInputElement>(null);
   const onDrop = (e: DragEvent) => {
@@ -27,13 +29,13 @@ export function SourcePanel(p: Props) {
   return (
     <section className="panel source">
       <div className="drop" onDragOver={(e) => e.preventDefault()} onDrop={onDrop} onClick={() => fileInput.current?.click()}>
-        학습 JSONL 파일을 여기로 끌어다 놓거나 눌러서 고르세요. (브라우저 안에서만 처리되며 어디에도 전송되지 않습니다)
+        {m.dropHint}
         <input ref={fileInput} type="file" accept=".jsonl,.json,.txt" hidden onChange={(e) => e.target.files?.[0] && p.onFile(e.target.files[0])} />
       </div>
       <div className="row">
         <label>
-          번들 템플릿(연습용){" "}
-          <select value={p.customLabel ? "" : p.template} onChange={(e) => p.onTemplate(e.target.value)} aria-label="번들 템플릿">
+          {m.bundledTemplate}{" "}
+          <select value={p.customLabel ? "" : p.template} onChange={(e) => p.onTemplate(e.target.value)} aria-label={m.bundledTemplate}>
             {p.customLabel && <option value="">{p.customLabel}</option>}
             {Object.entries(BUNDLED_TEMPLATES).map(([id, t]) => (
               <option key={id} value={id}>{t.label}</option>
@@ -41,12 +43,12 @@ export function SourcePanel(p: Props) {
           </select>
         </label>
         <label>
-          허브 모델 ID{" "}
-          <input value={hubId} onChange={(e) => setHubId(e.target.value)} aria-label="허브 모델 ID" size={30} />
+          {m.hubModelId}{" "}
+          <input value={hubId} onChange={(e) => setHubId(e.target.value)} aria-label={m.hubModelId} size={30} />
         </label>
-        <button onClick={() => p.onHub(hubId)}>허브에서 받기</button>
+        <button onClick={() => p.onHub(hubId)}>{m.fetchHub}</button>
         <label className="filebtn">
-          로컬 파일(tokenizer.json, tokenizer_config.json, chat_template.jinja)
+          {m.localFiles}
           <input type="file" multiple hidden onChange={(e) => e.target.files && p.onLocalFiles([...e.target.files])} />
         </label>
       </div>
@@ -56,8 +58,8 @@ export function SourcePanel(p: Props) {
           <input type="range" min={64} max={8192} step={64} value={p.maxSeqLen} onChange={(e) => p.onMax(Number(e.target.value))} aria-label="max_seq_length" />
         </label>
         <label>
-          고정 날짜{" "}
-          <input value={p.date} onChange={(e) => p.onDate(e.target.value)} aria-label="고정 날짜" size={10} />
+          {m.fixedDate}{" "}
+          <input value={p.date} onChange={(e) => p.onDate(e.target.value)} aria-label={m.fixedDate} size={10} />
         </label>
         {p.busy && <span className="busy">{p.busy}</span>}
       </div>

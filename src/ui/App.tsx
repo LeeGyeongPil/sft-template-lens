@@ -6,6 +6,8 @@ import { loadFromFiles } from "../core/loaders/files";
 import { loadFromHub } from "../core/loaders/hub";
 import type { Report, TemplateBundle } from "../core/types";
 import { formatHash, parseHash } from "./hashState";
+import { LANGS, localizeError, messages, type Lang, type Messages } from "../i18n";
+import { initialLang, LangContext, saveLang } from "./lang";
 import { IssueTable } from "./components/IssueTable";
 import { LengthHistogram } from "./components/LengthHistogram";
 import { SourcePanel } from "./components/SourcePanel";
@@ -21,6 +23,9 @@ function download(name: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
+// Progress text is stored as a selector (not a translated string) so a language switch updates it at once.
+type Busy = { text: (m: Messages) => string } | null;
+
 export function App() {
   const initial = useMemo(() => parseHash(window.location.hash), []);
   const [jsonl, setJsonl] = useState(DEMO_JSONL);
@@ -32,18 +37,30 @@ export function App() {
   const [sample, setSample] = useState(initial.sample);
   const [view, setView] = useState(initial.view);
   const [base, setBase] = useState<Report | null>(null);
-  const [busy, setBusy] = useState<string | null>("검사 중…");
-  const [error, setError] = useState<string | null>(null);
+  const [lang, setLang] = useState<Lang>(initialLang);
+  const m = messages(lang);
+  const [busy, setBusy] = useState<Busy>({ text: (x) => x.busyChecking });
+  // The raw error is kept and translated while rendering, so a language switch also re-translates it.
+  const [error, setError] = useState<unknown>(null);
   const run = useRef(0);
+
+  // Keep <html lang> in step with the chosen language and remember the choice.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  const chooseLang = (next: Lang) => {
+    saveLang(next);
+    setLang(next);
+  };
 
   const bundle = useMemo(() => custom ?? loadBundled(template), [custom, template]);
 
   // Render + tokenize whenever the data, template or date changes. The length slider does not come through here.
   useEffect(() => {
     const id = ++run.current;
-    setBusy("검사 중…");
+    setBusy({ text: (x) => x.busyChecking });
     setError(null);
-    inspectDataset(jsonl, bundle, { maxSeqLen: 2048, date }, { onProgress: (d, t) => id === run.current && setBusy(`검사 중… ${d}/${t}`) })
+    inspectDataset(jsonl, bundle, { maxSeqLen: 2048, date }, { onProgress: (d, t) => id === run.current && setBusy({ text: (x) => x.busyProgress(d, t) }) })
       .then((r) => {
         if (id !== run.current) return;
         setBase(r);
@@ -51,7 +68,7 @@ export function App() {
       })
       .catch((e: unknown) => {
         if (id !== run.current) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e);
         setBusy(null);
       });
   }, [jsonl, bundle, date]);
@@ -63,12 +80,12 @@ export function App() {
     window.history.replaceState(null, "", formatHash({ template: custom ? "custom" : template, sample, max, view }));
   }, [template, custom, sample, max, view]);
 
-  const guarded = async (label: string, job: () => Promise<void>) => {
-    setBusy(label);
+  const guarded = async (label: (x: Messages) => string, job: () => Promise<void>) => {
+    setBusy({ text: label });
     try {
       await job();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e);
       setBusy(null);
     }
   };
@@ -76,24 +93,33 @@ export function App() {
   const selected = report?.results.find((r) => r.line === sample);
 
   return (
+    <LangContext.Provider value={{ lang, m }}>
     <main>
       <header>
         <h1>sft-template-lens</h1>
-        <p>학습 전에, 모델의 실제 채팅 템플릿과 토크나이저로 JSONL을 렌더해 학습 토큰(마스크)·잘림·형식 오류를 확인합니다.</p>
+        <label className="lang-menu">
+          {m.langMenuLabel}{" "}
+          <select value={lang} onChange={(e) => chooseLang(e.target.value as Lang)} aria-label={m.langMenuLabel}>
+            {LANGS.map((l) => (
+              <option key={l} value={l}>{l === "en" ? "English" : "한국어"}</option>
+            ))}
+          </select>
+        </label>
+        <p>{m.appIntro}</p>
       </header>
       {(bundle.mock || usingDemoData) && (
         <div className="mock-banner" role="note">
-          연습용 데모(목) 모드 — 번들된 SmolLM2 토크나이저와 샘플 템플릿{usingDemoData ? ", 직접 만든 데모 데이터" : ""}로 동작합니다. 템플릿과 토크나이저 조합이 실제 모델과 다를 수 있습니다. 내 파일을 끌어다 놓으세요.
+          {m.mockBanner(usingDemoData)}
         </div>
       )}
       <SourcePanel
         template={template}
         maxSeqLen={max}
         date={date}
-        busy={busy}
+        busy={busy ? busy.text(m) : null}
         customLabel={custom ? custom.label : null}
         onFile={(f) =>
-          void guarded("파일 읽는 중…", async () => {
+          void guarded((x) => x.busyReading, async () => {
             setJsonl(await f.text());
             setUsingDemoData(false);
             setSample(1);
@@ -103,21 +129,21 @@ export function App() {
           setCustom(null);
           setTemplate(name);
         }}
-        onHub={(id) => void guarded("허브에서 받는 중… (모델에 따라 수십 초 걸릴 수 있습니다)", async () => setCustom(await loadFromHub(id.trim())))}
-        onLocalFiles={(files) => void guarded("파일 읽는 중…", async () => setCustom(await loadFromFiles(files)))}
+        onHub={(id) => void guarded((x) => x.busyHub, async () => setCustom(await loadFromHub(id.trim())))}
+        onLocalFiles={(files) => void guarded((x) => x.busyReading, async () => setCustom(await loadFromFiles(files)))}
         onMax={setMax}
         onDate={setDate}
       />
-      {error && <div className="error" role="alert">{error}</div>}
+      {error !== null && <div className="error" role="alert">{localizeError(error, m)}</div>}
       {report && (
         <>
           <SummaryCards report={report} />
           <section className="panel">
-            <h2>템플릿 진단</h2>
+            <h2>{m.diagTitle}</h2>
             <p>
-              {report.template.label} · 마스크 방식 {report.template.maskStrategy === "exact-generation" ? "정확(generation 표지)" : "근사(content 위치)"}
+              {m.diagLine(report.template.label, report.template.maskStrategy === "exact-generation")}
             </p>
-            {report.template.issues.length === 0 ? <p className="muted">템플릿 수준 경고가 없습니다.</p> : (
+            {report.template.issues.length === 0 ? <p className="muted">{m.diagNone}</p> : (
               <ul>
                 {report.template.issues.map((i, k) => (
                   <li key={k}><span className={`badge ${i.severity}`}>{i.rule}</span> {i.message}</li>
@@ -129,11 +155,12 @@ export function App() {
           <IssueTable report={report} onSelect={setSample} />
           <TokenView report={report} sample={selected} view={view} onView={setView} />
           <section className="panel toolbar">
-            <button onClick={() => download("clean.jsonl", cleanJsonl(report))}>정리 JSONL 내려받기(오류 샘플 제외)</button>
-            <button onClick={() => download("issues.jsonl", issuesJsonl(report))}>문제 목록 내려받기</button>
+            <button onClick={() => download("clean.jsonl", cleanJsonl(report))}>{m.downloadClean}</button>
+            <button onClick={() => download("issues.jsonl", issuesJsonl(report))}>{m.downloadIssues}</button>
           </section>
         </>
       )}
     </main>
+    </LangContext.Provider>
   );
 }

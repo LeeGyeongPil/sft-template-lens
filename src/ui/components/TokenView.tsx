@@ -1,5 +1,7 @@
 import { tokenStarts } from "../../core/tokenize";
 import type { Report, SampleResult } from "../../core/types";
+import { tokenCount } from "../../i18n";
+import { useLang } from "../lang";
 
 const MAX_CHIPS = 3000;
 
@@ -12,17 +14,18 @@ interface Props {
 
 /** Colored token chips: green = trained, gray = masked, hatched = cut by max_seq_length, outlined = special token. */
 export function TokenView({ report, sample, view, onView }: Props) {
+  const { m } = useLang();
   const special = new Set(report.template.specialTokenIds);
   const exact = report.template.maskStrategy === "exact-generation";
   return (
     <section className="panel">
       <h2>
-        토큰 보기 {sample ? `(줄 ${sample.line})` : ""}{" "}
-        <span className={`badge ${exact ? "good" : "warn"}`} title={exact ? "{% generation %} 표지에서 계산" : "어시스턴트 content 위치로 근사"}>
-          마스크 {exact ? "정확" : "근사"}
+        {m.tokenViewTitle} {sample ? m.tokenViewLine(sample.line) : ""}{" "}
+        <span className={`badge ${exact ? "good" : "warn"}`} title={m.badgeTitle(exact)}>
+          {m.badgeMask(exact)}
         </span>
       </h2>
-      {!sample && <p className="muted">샘플을 고르세요(문제 표의 줄을 누르거나 해시 sample=번호).</p>}
+      {!sample && <p className="muted">{m.pickSample}</p>}
       {sample && sample.text === null && (
         <ul>
           {sample.issues.map((i, k) => (
@@ -33,20 +36,20 @@ export function TokenView({ report, sample, view, onView }: Props) {
       {sample && sample.text !== null && (
         <>
           <div className="toolbar">
-            <button onClick={() => onView(view === "tokens" ? "text" : "tokens")}>{view === "tokens" ? "텍스트로 보기" : "토큰으로 보기"}</button>
+            <button onClick={() => onView(view === "tokens" ? "text" : "tokens")}>{view === "tokens" ? m.viewAsText : m.viewAsTokens}</button>
             <span className="muted">
-              토큰 {sample.tokenCount}개 · 학습 {sample.trainTokens}개 · 잘림 후 학습 {sample.trainTokensAfterTruncation}개
+              {m.tokenStats(tokenCount(m, sample.tokenCount), sample.trainTokens, sample.trainTokensAfterTruncation)}
             </span>
           </div>
           <div className="legend">
-            <span className="chip train">학습</span> <span className="chip masked">마스크</span> <span className="chip cut">잘림</span> <span className="chip special">특수 토큰</span>
+            <span className="chip train">{m.legendTrain}</span> <span className="chip masked">{m.legendMasked}</span> <span className="chip cut">{m.legendCut}</span> <span className="chip special">{m.legendSpecial}</span>
           </div>
-          {!sample.maskValid && <p className="warn-text">마스크를 계산하지 못했습니다(W111). 색칠은 모두 마스크로 표시됩니다.</p>}
+          {!sample.maskValid && <p className="warn-text">{m.maskFailed}</p>}
           {view === "text" ? (
             <pre className="rendered">{sample.text}</pre>
           ) : (
             <div className="tokens" data-testid="tokens">
-              {renderChips(sample, special, report.options.maxSeqLen)}
+              {renderChips(sample, special, report.options.maxSeqLen, m.moreChips)}
             </div>
           )}
         </>
@@ -55,7 +58,7 @@ export function TokenView({ report, sample, view, onView }: Props) {
   );
 }
 
-function renderChips(sample: SampleResult, special: Set<number>, maxSeqLen: number) {
+function renderChips(sample: SampleResult, special: Set<number>, maxSeqLen: number, moreChips: (n: number) => string) {
   const starts = tokenStarts(sample.ends);
   const chips = [];
   const limit = Math.min(sample.ends.length, MAX_CHIPS);
@@ -69,6 +72,6 @@ function renderChips(sample: SampleResult, special: Set<number>, maxSeqLen: numb
       </span>,
     );
   }
-  if (sample.ends.length > limit) chips.push(<span key="more" className="muted"> … 외 {sample.ends.length - limit}개</span>);
+  if (sample.ends.length > limit) chips.push(<span key="more" className="muted">{moreChips(sample.ends.length - limit)}</span>);
   return chips;
 }

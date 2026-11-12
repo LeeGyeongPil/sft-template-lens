@@ -28,3 +28,4 @@ table.issues th, table.issues td { text-align: left; border-bottom: 1px solid #e
 .rendered { white-space: pre-wrap; background: #fafbfd; padding: 8px; border-radius: 6px; font-size: 0.82rem; }
 .muted { color: #6b7280; } .warn-text { color: #8a5a00; }
 button, .filebtn { border: 1px solid #9aa5b8; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
+.lang-menu { float: right; font-size: 0.9rem; }

@@ -1,4 +1,5 @@
 import type { Report } from "../../core/types";
+import { useLang } from "../lang";
 
 const W = 520;
 const H = 120;
@@ -6,9 +7,10 @@ const BINS = 16;
 
 /** Token length distribution as plain SVG, with the max_seq_length line. */
 export function LengthHistogram({ report }: { report: Report }) {
+  const { m } = useLang();
   const lengths = report.results.filter((r) => r.text !== null).map((r) => r.tokenCount);
   const max = report.options.maxSeqLen;
-  if (lengths.length === 0) return <section className="panel">길이 분포: 표시할 샘플이 없습니다.</section>;
+  if (lengths.length === 0) return <section className="panel">{m.histEmpty}</section>;
   const top = Math.max(max, ...lengths) * 1.05;
   const counts = new Array<number>(BINS).fill(0);
   for (const n of lengths) counts[Math.min(BINS - 1, Math.floor((n / top) * BINS))]!++;
@@ -17,8 +19,8 @@ export function LengthHistogram({ report }: { report: Report }) {
   const maxX = (max / top) * W;
   return (
     <section className="panel">
-      <h2>토큰 길이 분포</h2>
-      <svg viewBox={`0 0 ${W} ${H + 18}`} role="img" aria-label="토큰 길이 히스토그램" className="histogram">
+      <h2>{m.histTitle}</h2>
+      <svg viewBox={`0 0 ${W} ${H + 18}`} role="img" aria-label={m.histAria} className="histogram">
         {counts.map((c, i) => (
           <rect key={i} x={i * bw + 1} y={H - (c / tallest) * (H - 8)} width={bw - 2} height={(c / tallest) * (H - 8)} className={(i + 0.5) * (top / BINS) > max ? "bar over" : "bar"} />
         ))}
@@ -27,7 +29,7 @@ export function LengthHistogram({ report }: { report: Report }) {
           max_seq_length {max}
         </text>
         <text x={0} y={H + 14} className="axis">0</text>
-        <text x={W} y={H + 14} textAnchor="end" className="axis">{Math.round(top)} 토큰</text>
+        <text x={W} y={H + 14} textAnchor="end" className="axis">{m.histAxis(Math.round(top))}</text>
       </svg>
     </section>
   );
